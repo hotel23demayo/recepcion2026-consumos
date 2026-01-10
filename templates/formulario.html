@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carga de Comandas - Recepción 2026</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn-primary { background-color: #0056b3; border: none; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card p-4">
+                    <h2 class="text-center mb-4">Registro de Consumo</h2>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                      {% if messages %}
+                        {% for category, message in messages %}
+                          <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                      {% endif %}
+                    {% endwith %}
+
+                    <form action="/cargar" method="POST">
+                        <div class="mb-3">
+                            <label for="habitacion" class="form-label">Número de Habitación</label>
+                            <input type="number" name="habitacion" id="habitacion" class="form-control form-control-lg" placeholder="Ej: 101" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="categoria" class="form-label">Rubro / Consumo</label>
+                            <select name="categoria" id="categoria" class="form-select form-select-lg" required>
+                                <option value="" selected disabled>Seleccione una opción...</option>
+                                <option value="Bebidas">Bebidas</option>
+                                <option value="Estadía">Estadía</option>
+                                <option value="Map">Map</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="monto" class="form-label">Monto Total ($)</label>
+                            <input type="number" step="0.01" name="monto" id="monto" class="form-control form-control-lg" placeholder="0.00" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Registrar Comanda</button>
+                    </form>
+                </div>
+                <p class="text-center mt-3 text-muted">Temporada 2026 - Control de Salidas</p>
+            </div>
+        </div>
+    </div>
+    <div class="mt-4 d-grid gap-2">
+    <hr>
+    <h5 class="text-center text-muted">Controles de Recepción</h5>
+    <a href="/cierre-dia" class="btn btn-outline-secondary btn-lg">
+        📥 Consulta Carga de Consumos (CSV)
+    </a>
+    <a href="/cierre-xlsx" class="btn btn-outline-success btn-lg">
+        📊 Generar Archivo Salidas (XLSX - Excel)
+    </a>
+    <a href="/ver-consumos" class="btn btn-outline-info btn-lg">
+        👁️ Ver Historial de Consumos
+    </a>
+    <hr>
+    <h5 class="text-center text-muted">🧹 Limpieza de Temporada</h5>
+    <a href="/reiniciar-temporada" class="btn btn-outline-warning btn-lg">
+        🔄 Reiniciar Temporada (Archivar y Limpiar)
+    </a>
+</div>
+</body>
+</html>
