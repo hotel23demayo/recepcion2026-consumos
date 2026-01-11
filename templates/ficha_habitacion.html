@@ -194,6 +194,19 @@
                 </div>
             </div>
 
+            <!-- Banner de Check-out Hoy (si aplica) -->
+            {% if habitacion.es_checkout_hoy %}
+            <div class="alert alert-danger d-flex justify-content-between align-items-center mb-4" style="font-size: 1.1rem;">
+                <div>
+                    <strong>🚪 CHECK-OUT PROGRAMADO PARA HOY</strong>
+                    <p class="mb-0 mt-1">El huésped puede agregar consumos de último momento antes de retirarse</p>
+                </div>
+                <a href="/checkout/{{ habitacion.numero }}" class="btn btn-danger btn-lg">
+                    ➡️ Procesar Check-out
+                </a>
+            </div>
+            {% endif %}
+
             <!-- Información del pasajero -->
             <div class="info-pasajero">
                 <h5 class="mb-3">📋 Información de la Reserva</h5>

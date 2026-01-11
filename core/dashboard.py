@@ -16,7 +16,8 @@ PISOS = {
 
 def obtener_habitaciones_ocupadas(archivo_pasajeros='data/pasajeros.csv'):
     """
-    Obtiene la lista de habitaciones ocupadas desde el CSV de pasajeros.
+    Obtiene la lista de habitaciones ocupadas ACTUALMENTE desde el CSV de pasajeros.
+    Solo retorna habitaciones donde la fecha de ingreso ya pasó o es hoy.
     Retorna un diccionario con número de habitación como key y datos del pasajero.
     """
     if not os.path.exists(archivo_pasajeros):
@@ -24,17 +25,69 @@ def obtener_habitaciones_ocupadas(archivo_pasajeros='data/pasajeros.csv'):
     
     df = pd.read_csv(archivo_pasajeros)
     habitaciones_ocupadas = {}
+    fecha_hoy = datetime.now().strftime('%d/%m/%Y')
     
     for _, row in df.iterrows():
-        habitaciones_ocupadas[int(row['Nro. habitación'])] = {
-            'pasajero': row['Apellido y nombre'],
-            'plazas': int(row['Plazas ocupadas']),
-            'ingreso': row['Fecha de ingreso'],
-            'egreso': row['Fecha de egreso'],
-            'servicios': row['Servicios']
-        }
+        fecha_ingreso = row['Fecha de ingreso']
+        
+        # Solo incluir si ya ingresó (fecha ingreso <= hoy)
+        try:
+            ingreso_dt = datetime.strptime(fecha_ingreso, '%d/%m/%Y')
+            hoy_dt = datetime.strptime(fecha_hoy, '%d/%m/%Y')
+            
+            if ingreso_dt <= hoy_dt:
+                habitaciones_ocupadas[int(row['Nro. habitación'])] = {
+                    'pasajero': row['Apellido y nombre'],
+                    'plazas': int(row['Plazas ocupadas']),
+                    'ingreso': row['Fecha de ingreso'],
+                    'egreso': row['Fecha de egreso'],
+                    'servicios': row['Servicios']
+                }
+        except:
+            # Si hay error en la fecha, incluir por defecto
+            habitaciones_ocupadas[int(row['Nro. habitación'])] = {
+                'pasajero': row['Apellido y nombre'],
+                'plazas': int(row['Plazas ocupadas']),
+                'ingreso': row['Fecha de ingreso'],
+                'egreso': row['Fecha de egreso'],
+                'servicios': row['Servicios']
+            }
     
     return habitaciones_ocupadas
+
+
+def obtener_habitaciones_reservadas_futuras(archivo_pasajeros='data/pasajeros.csv'):
+    """
+    Obtiene la lista de habitaciones con reservas para ingresos futuros.
+    Retorna un diccionario con número de habitación como key y datos de la reserva.
+    """
+    if not os.path.exists(archivo_pasajeros):
+        return {}
+    
+    df = pd.read_csv(archivo_pasajeros)
+    habitaciones_futuras = {}
+    fecha_hoy = datetime.now().strftime('%d/%m/%Y')
+    
+    for _, row in df.iterrows():
+        fecha_ingreso = row['Fecha de ingreso']
+        
+        # Solo incluir si ingresa en el futuro (fecha ingreso > hoy)
+        try:
+            ingreso_dt = datetime.strptime(fecha_ingreso, '%d/%m/%Y')
+            hoy_dt = datetime.strptime(fecha_hoy, '%d/%m/%Y')
+            
+            if ingreso_dt > hoy_dt:
+                habitaciones_futuras[int(row['Nro. habitación'])] = {
+                    'pasajero': row['Apellido y nombre'],
+                    'plazas': int(row['Plazas ocupadas']),
+                    'ingreso': row['Fecha de ingreso'],
+                    'egreso': row['Fecha de egreso'],
+                    'servicios': row['Servicios']
+                }
+        except:
+            pass
+    
+    return habitaciones_futuras
 
 
 def obtener_habitaciones_con_consumos(archivo_consumos='data/consumos_diarios.csv'):
@@ -76,29 +129,35 @@ def obtener_habitaciones_checkout():
     return checkouts_hoy
 
 
-def calcular_estado_habitacion(num_habitacion, habitaciones_ocupadas, habitaciones_con_consumos, checkouts_hoy=None):
+def calcular_estado_habitacion(num_habitacion, habitaciones_ocupadas, habitaciones_con_consumos, checkouts_hoy=None, habitaciones_reservadas=None):
     """
     Calcula el estado de una habitación según su ocupación y consumos.
     
     Retorna:
-        - 'vacia': habitación no ocupada (gris)
+        - 'vacia': habitación no ocupada y sin reserva futura (gris)
+        - 'reservada': reserva futura, aún no ingresó (gris con info de reserva)
         - 'ocupada': ocupada sin consumos (verde)
         - 'con_consumos': ocupada con consumos (naranja)
         - 'checkout': checkout programado para hoy (rojo)
     """
-    if num_habitacion not in habitaciones_ocupadas:
-        return 'vacia'
-    
-    # Prioridad 1: Check-out hoy
+    # Prioridad 1: Check-out hoy (de habitaciones ocupadas)
     if checkouts_hoy and num_habitacion in checkouts_hoy:
         return 'checkout'
     
-    # Prioridad 2: Con consumos
-    if num_habitacion in habitaciones_con_consumos:
-        return 'con_consumos'
+    # Prioridad 2: Habitación ocupada actualmente
+    if num_habitacion in habitaciones_ocupadas:
+        # Con consumos
+        if num_habitacion in habitaciones_con_consumos:
+            return 'con_consumos'
+        # Sin consumos
+        return 'ocupada'
     
-    # Por defecto: ocupada sin consumos
-    return 'ocupada'
+    # Prioridad 3: Habitación con reserva futura
+    if habitaciones_reservadas and num_habitacion in habitaciones_reservadas:
+        return 'reservada'
+    
+    # Por defecto: vacía
+    return 'vacia'
 
 
 def obtener_datos_dashboard():
@@ -109,10 +168,12 @@ def obtener_datos_dashboard():
         - pisos: estructura de habitaciones por piso
         - estados: estado de cada habitación
         - ocupadas: datos de habitaciones ocupadas
+        - reservadas: datos de habitaciones con reserva futura
         - estadisticas: resumen general
         - checkouts_hoy: habitaciones con checkout hoy
     """
     habitaciones_ocupadas = obtener_habitaciones_ocupadas()
+    habitaciones_reservadas = obtener_habitaciones_reservadas_futuras()
     habitaciones_con_consumos = obtener_habitaciones_con_consumos()
     checkouts_hoy = obtener_habitaciones_checkout()
     
@@ -124,19 +185,22 @@ def obtener_datos_dashboard():
                 num_hab, 
                 habitaciones_ocupadas, 
                 habitaciones_con_consumos,
-                checkouts_hoy
+                checkouts_hoy,
+                habitaciones_reservadas
             )
     
     # Calcular estadísticas
     total_habitaciones = sum(len(habs) for habs in PISOS.values())
     total_ocupadas = len(habitaciones_ocupadas)
+    total_reservadas = len(habitaciones_reservadas)
     total_con_consumos = len([h for h, e in estados.items() if e == 'con_consumos'])
     total_checkouts = len(checkouts_hoy)
     
     estadisticas = {
         'total': total_habitaciones,
         'ocupadas': total_ocupadas,
-        'vacias': total_habitaciones - total_ocupadas,
+        'vacias': total_habitaciones - total_ocupadas - total_reservadas,
+        'reservadas': total_reservadas,
         'con_consumos': total_con_consumos,
         'sin_consumos': total_ocupadas - total_con_consumos,
         'checkouts_hoy': total_checkouts
@@ -146,6 +210,7 @@ def obtener_datos_dashboard():
         'pisos': PISOS,
         'estados': estados,
         'ocupadas': habitaciones_ocupadas,
+        'reservadas': habitaciones_reservadas,
         'estadisticas': estadisticas,
         'checkouts_hoy': checkouts_hoy
     }

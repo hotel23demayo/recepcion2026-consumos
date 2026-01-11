@@ -12,6 +12,7 @@ from core.consumos import (
     agregar_consumo, 
     eliminar_consumo_por_indice
 )
+from core.reserva_express import crear_reserva_express, obtener_habitaciones_disponibles, validar_datos_reserva
 
 app = Flask(__name__)
 app.secret_key = 'temporada_2026_recepcion_key_secreta'
@@ -49,12 +50,15 @@ def dashboard():
                          pisos=datos['pisos'],
                          estados=datos['estados'],
                          ocupadas=datos['ocupadas'],
+                         reservadas=datos['reservadas'],
                          estadisticas=datos['estadisticas'],
                          checkouts_hoy=datos['checkouts_hoy'])
 
 @app.route('/habitacion/<int:num_habitacion>')
 def ficha_habitacion(num_habitacion):
     """Muestra la ficha individual de una habitación"""
+    from core.dashboard import es_checkout_hoy
+    
     # Obtener datos del pasajero
     habitaciones_ocupadas = obtener_habitaciones_ocupadas()
     
@@ -66,6 +70,9 @@ def ficha_habitacion(num_habitacion):
     # Obtener resumen completo de la habitación
     datos_pasajero = habitaciones_ocupadas[num_habitacion]
     resumen = obtener_resumen_habitacion(num_habitacion, datos_pasajero)
+    
+    # Verificar si es checkout hoy
+    resumen['es_checkout_hoy'] = es_checkout_hoy(datos_pasajero['egreso'])
     
     return render_template('ficha_habitacion.html', habitacion=resumen)
 
@@ -291,7 +298,7 @@ def cierre_xlsx():
         for i in range(fila_actual, max_filas):
             data[i] = [None, None, None, None, None, 0.0]
         
-        # Guardar como XLSX en archivo temporal
+        # Guardar como XLSX in archivo temporal
         df_salidas = pd.DataFrame(data)
         with tempfile.NamedTemporaryFile(mode='wb', suffix='.xlsx', delete=False) as tmp:
             archivo_salida = tmp.name
@@ -676,6 +683,54 @@ def subir_pasajeros():
     except Exception as e:
         flash(f'❌ Error al subir archivo: {str(e)}', 'danger')
         return redirect('/gestionar-pasajeros')
+
+@app.route('/reserva-express', methods=['GET', 'POST'])
+def reserva_express():
+    """Página de registro rápido para walk-ins (huéspedes sin reserva)"""
+    
+    if request.method == 'GET':
+        from core.dashboard import obtener_habitaciones_reservadas_futuras
+        
+        # Mostrar formulario con habitaciones disponibles
+        habitaciones_disponibles = obtener_habitaciones_disponibles()
+        habitacion_preseleccionada = request.args.get('habitacion', type=int)
+        tiene_reserva_futura = request.args.get('reserva_futura', type=int) == 1
+        
+        # Si tiene reserva futura, obtener la información
+        fecha_reserva_futura = None
+        if tiene_reserva_futura and habitacion_preseleccionada:
+            reservas_futuras = obtener_habitaciones_reservadas_futuras()
+            if habitacion_preseleccionada in reservas_futuras:
+                fecha_reserva_futura = reservas_futuras[habitacion_preseleccionada]['ingreso']
+        
+        return render_template('reserva_express.html', 
+                             habitaciones=habitaciones_disponibles,
+                             total_disponibles=len(habitaciones_disponibles),
+                             habitacion_preseleccionada=habitacion_preseleccionada,
+                             tiene_reserva_futura=tiene_reserva_futura,
+                             fecha_reserva_futura=fecha_reserva_futura)
+    
+    # POST: Procesar reserva
+    habitacion = request.form.get('habitacion')
+    nombre = request.form.get('nombre', 'Huésped sin reserva').strip()
+    pax = request.form.get('pax', 1)
+    servicios = request.form.get('servicios', 'DESAYUNO')
+    
+    # Validar datos
+    valido, error = validar_datos_reserva(habitacion, nombre, pax)
+    if not valido:
+        flash(f'❌ {error}', 'danger')
+        return redirect('/reserva-express')
+    
+    # Crear reserva
+    reserva, mensaje = crear_reserva_express(habitacion, nombre, pax, servicios)
+    
+    if reserva:
+        flash(f'✅ {mensaje}. Habitación {habitacion} ahora está ocupada por {nombre}.', 'success')
+        return redirect('/dashboard')
+    else:
+        flash(f'❌ {mensaje}', 'danger')
+        return redirect('/reserva-express')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

@@ -1,0 +1,95 @@
+# 🛎️ Reserva Express (Walk‑ins)
+La funcionalidad **Reserva Express** permite registrar huéspedes que llegan sin reserva previa y se alojan por una noche.  
+Este tipo de estadía es común en mostrador y debe quedar registrada para que el módulo de consumos pueda:
+
+- asociar consumos a la habitación,
+- mostrar al huésped en el dashboard,
+- permitir checkout al día siguiente,
+- mantener un historial real de ocupación.
+
+Esta implementación convierte al sistema en un PMS más completo, permitiendo manejar tanto reservas anticipadas como huéspedes espontáneos.
+
+---
+
+## 🎯 Objetivo
+Crear una reserva mínima con los datos esenciales:
+
+- Habitación  
+- Nombre del huésped (opcional)  
+- Cantidad de pasajeros  
+- Fecha de entrada: **hoy**  
+- Fecha de salida: **mañana**  
+- Origen: `"walk-in"`
+
+La reserva se guarda en `data/reservas.csv` para que otros módulos puedan consumirla.
+
+---
+
+## 🧩 Flujo de uso
+1. Un huésped llega sin reserva.  
+2. El recepcionista asigna una habitación disponible.  
+3. Se ejecuta la función `crear_reserva_express`.  
+4. La reserva queda registrada automáticamente.  
+5. El módulo de consumos puede cargar consumos a esa habitación sin errores.  
+
+---
+
+## 🐍 Código Python sugerido
+
+```python
+from datetime import date, timedelta
+import csv
+import os
+
+def crear_reserva_express(habitacion, nombre="Huésped sin reserva", pax=1):
+    """
+    Crea una reserva mínima para huéspedes que llegan sin reserva previa (walk-ins).
+    La reserva se registra para la fecha actual y una noche de estadía.
+    """
+
+    hoy = date.today()
+    manana = hoy + timedelta(days=1)
+
+    nueva_reserva = {
+        "habitacion": habitacion,
+        "nombre": nombre,
+        "pax": pax,
+        "checkin": hoy.isoformat(),
+        "checkout": manana.isoformat(),
+        "origen": "walk-in"
+    }
+
+    # Asegurar que el archivo existe y tiene encabezados
+    ruta = "data/reservas.csv"
+    archivo_existe = os.path.exists(ruta)
+
+    with open(ruta, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=nueva_reserva.keys())
+
+        if not archivo_existe:
+            writer.writeheader()
+
+        writer.writerow(nueva_reserva)
+
+    return nueva_reserva
+---
+🔗 Integración con otros módulos
+Con recepcion2026-consumos
+Cuando se intenta cargar un consumo a una habitación sin estadía activa:
+
+El sistema puede detectar que no existe reserva.
+
+Preguntar si se desea crear una Reserva Express.
+
+Llamar a crear_reserva_express.
+
+Continuar con la carga del consumo sin interrupciones.
+
+🚀 Próximos pasos
+Integrar esta función en un módulo core/reserva_express.py.
+
+Crear un validador de disponibilidad simple.
+
+Preparar la migración a SQLite para manejar walk‑ins como registros reales de estadía.
+
+Conectar reservas y consumos mediante un ID único de estadía.

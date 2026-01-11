@@ -1,6 +1,6 @@
 # 🏨 Sistema de Gestión Hotelera - Recepción 2026 (Consumos)
 
-Sistema web modular para la gestión integral de consumos del hotel con **Dashboard interactivo de 53 habitaciones**, control individual por habitación, detección automática de checkouts y generación de reportes consolidados.
+Sistema web modular para la gestión integral de consumos del hotel con **Dashboard interactivo de 53 habitaciones**, control individual por habitación, detección automática de checkouts, **Reserva Express (Walk-ins)** y generación de reportes consolidados.
 
 ---
 
@@ -8,6 +8,9 @@ Sistema web modular para la gestión integral de consumos del hotel con **Dashbo
 
 ✅ **Dashboard visual de 53 habitaciones** con estados en tiempo real  
 ✅ **Detección automática de checkouts** del día actual con indicadores visuales  
+✅ **Reservas futuras visibles** para evitar overbooking  
+✅ **Reserva Express (Walk-ins)** con un click desde habitaciones disponibles  
+✅ **Consumos de último momento** antes del checkout  
 ✅ **Fichas individuales por habitación** con CRUD completo de consumos  
 ✅ **Sistema flexible de consumos** (todos los pasajeros pueden comprar cualquier producto)  
 ✅ **Generación de Excel consolidado** con formato salidas.xlsx  
@@ -76,25 +79,60 @@ El dashboard utiliza colores intuitivos para identificar el estado de cada habit
 | 🔴 **Rojo pulsante** | Checkout hoy | Fecha de egreso coincide con hoy (prioridad máxima) |
 | 🟠 **Naranja** | Con consumos | Habitación ocupada con consumos registrados |
 | 🟢 **Verde** | Ocupada | Habitación ocupada sin consumos |
-| ⚪ **Gris** | Vacía | No figura en el registro de pasajeros |
+| 🔵 **Azul** | Reserva futura | Ingreso programado para fecha futura |
+| ⚪ **Gris** | Vacía | Disponible para Reserva Express |
 
 ### Indicadores Visuales
 
 - **Badge rojo "CHECKOUT HOY"**: Aparece sobre las habitaciones con egreso programado para hoy
 - **Animación pulsante**: Las habitaciones de checkout tienen efecto visual llamativo
+- **Click para Express**: Habitaciones vacías y reservadas muestran acceso rápido a Reserva Express
 - **Botón consolidado**: "Descargar Salidas Hoy" (solo visible si hay checkouts)
 
-### Acciones
+### Acciones por Estado
 
-- **Click en habitación** → Abre ficha detallada con información del pasajero y consumos
-- **Botón "Gestionar Pasajeros"** → Carga de nuevos archivos CSV desde sistema externo
-- **Botón "Descargar Salidas Hoy"** → Genera Excel consolidado con todos los checkouts del día
+- **Habitación Vacía (gris)** → Click directo a Reserva Express con habitación pre-seleccionada
+- **Habitación Reservada (azul)** → Permite venta Express con advertencia de ingreso futuro
+- **Habitación Ocupada** → Abre ficha detallada con consumos
+- **Habitación Checkout (roja)** → Permite consumos de último momento antes del checkout
+
+---
+
+## 🛎️ Reserva Express (Walk-ins)
+
+Sistema integrado para registrar huéspedes sin reserva previa con un click.
+
+### Características
+
+- ✅ **Check-in instantáneo**: 1 noche (hoy → mañana)
+- ✅ **Acceso directo**: Click en habitaciones disponibles desde el dashboard
+- ✅ **Advertencia de reservas**: Permite vender habitaciones con ingreso futuro
+- ✅ **Registro automático**: Genera voucher único y actualiza disponibilidad
+- ✅ **Consumos inmediatos**: Se pueden cargar consumos apenas se registra
+
+### Flujo de Uso
+
+1. **Habitación Vacía (gris)**: Click → Reserva Express con habitación pre-seleccionada
+2. **Habitación con Reserva Futura (azul)**: Click → Advertencia de ingreso programado + opción de venta
+3. **Completar datos**: Nombre, cantidad de personas (1-4), régimen alimenticio
+4. **Confirmación**: Habitación queda ocupada inmediatamente
+
+### Inteligencia de Disponibilidad
+
+- Muestra solo habitaciones disponibles AHORA (sin ocupación actual)
+- Identifica reservas futuras y permite venta inteligente
+- Evita conflictos: checkout temprano (10:00) vs ingreso tardío (14:00+)
 
 ---
 
 ## 🛎️ Ficha de Habitación
 
 Cada habitación tiene una vista detallada que muestra:
+
+### Banner de Checkout (si aplica)
+- Alerta destacada cuando la fecha de egreso es HOY
+- Permite agregar consumos de último momento antes del checkout
+- Botón "Procesar Check-out" visible cuando el huésped está listo
 
 ### Información del Pasajero
 - Número de habitación
