@@ -116,6 +116,8 @@ def eliminar_consumo_habitacion(num_habitacion, indice):
 @app.route('/checkout/<int:num_habitacion>')
 def checkout(num_habitacion):
     """Muestra la pantalla de check-out con resumen final"""
+    from core.dashboard import es_checkout_hoy
+    
     # Obtener datos del pasajero
     habitaciones_ocupadas = obtener_habitaciones_ocupadas()
     
@@ -126,6 +128,9 @@ def checkout(num_habitacion):
     # Obtener resumen completo
     datos_pasajero = habitaciones_ocupadas[num_habitacion]
     resumen = obtener_resumen_habitacion(num_habitacion, datos_pasajero)
+    
+    # Verificar si es checkout hoy o anticipado
+    resumen['es_checkout_hoy'] = es_checkout_hoy(datos_pasajero['egreso'])
     
     return render_template('checkout.html', checkout=resumen)
 
@@ -690,11 +695,19 @@ def reserva_express():
     
     if request.method == 'GET':
         from core.dashboard import obtener_habitaciones_reservadas_futuras
+        from core.reserva_express import calcular_noches_maximas
         
         # Mostrar formulario con habitaciones disponibles
         habitaciones_disponibles = obtener_habitaciones_disponibles()
         habitacion_preseleccionada = request.args.get('habitacion', type=int)
         tiene_reserva_futura = request.args.get('reserva_futura', type=int) == 1
+        
+        # Calcular límites de noches por habitación
+        limites_habitaciones = {}
+        for hab in habitaciones_disponibles:
+            limite = calcular_noches_maximas(hab)
+            if limite > 0:
+                limites_habitaciones[hab] = limite
         
         # Si tiene reserva futura, obtener la información
         fecha_reserva_futura = None
@@ -708,13 +721,15 @@ def reserva_express():
                              total_disponibles=len(habitaciones_disponibles),
                              habitacion_preseleccionada=habitacion_preseleccionada,
                              tiene_reserva_futura=tiene_reserva_futura,
-                             fecha_reserva_futura=fecha_reserva_futura)
+                             fecha_reserva_futura=fecha_reserva_futura,
+                             limites_habitaciones=limites_habitaciones)
     
     # POST: Procesar reserva
     habitacion = request.form.get('habitacion')
     nombre = request.form.get('nombre', 'Huésped sin reserva').strip()
     pax = request.form.get('pax', 1)
     servicios = request.form.get('servicios', 'DESAYUNO')
+    noches = request.form.get('noches', 1)
     
     # Validar datos
     valido, error = validar_datos_reserva(habitacion, nombre, pax)
@@ -722,15 +737,78 @@ def reserva_express():
         flash(f'❌ {error}', 'danger')
         return redirect('/reserva-express')
     
-    # Crear reserva
-    reserva, mensaje = crear_reserva_express(habitacion, nombre, pax, servicios)
+    # Crear reserva con las noches solicitadas
+    reserva, mensaje = crear_reserva_express(habitacion, nombre, pax, servicios, noches)
     
     if reserva:
-        flash(f'✅ {mensaje}. Habitación {habitacion} ahora está ocupada por {nombre}.', 'success')
+        flash(f'✅ {mensaje}. Habitación {habitacion} reservada para {nombre} por {noches} noche(s).', 'success')
         return redirect('/dashboard')
     else:
         flash(f'❌ {mensaje}', 'danger')
         return redirect('/reserva-express')
+
+@app.route('/cambiar-habitacion/<int:num_habitacion>', methods=['GET', 'POST'])
+def cambiar_habitacion_route(num_habitacion):
+    """Interfaz para cambiar un huésped de habitación por desperfectos"""
+    from core.cambio_habitacion import (
+        obtener_habitaciones_disponibles_para_cambio,
+        cambiar_habitacion,
+        validar_cambio_habitacion
+    )
+    
+    if request.method == 'GET':
+        # Verificar que la habitación esté ocupada
+        habitaciones_ocupadas = obtener_habitaciones_ocupadas()
+        
+        if num_habitacion not in habitaciones_ocupadas:
+            flash('La habitación no está ocupada actualmente', 'danger')
+            return redirect('/dashboard')
+        
+        # Obtener datos del pasajero
+        datos_pasajero = habitaciones_ocupadas[num_habitacion]
+        
+        # Obtener consumos para mostrar cuántos hay
+        if os.path.exists(DB_CONSUMOS):
+            df_consumos = pd.read_csv(DB_CONSUMOS)
+            cantidad_consumos = len(df_consumos[df_consumos['habitacion'] == num_habitacion])
+        else:
+            cantidad_consumos = 0
+        
+        # Obtener habitaciones disponibles
+        habitaciones_disponibles = obtener_habitaciones_disponibles_para_cambio(num_habitacion)
+        
+        return render_template('cambiar_habitacion.html',
+                             habitacion_origen=num_habitacion,
+                             datos_pasajero=datos_pasajero,
+                             cantidad_consumos=cantidad_consumos,
+                             habitaciones_disponibles=habitaciones_disponibles,
+                             total_disponibles=len(habitaciones_disponibles))
+    
+    # POST: Procesar cambio
+    habitacion_destino = request.form.get('habitacion_destino')
+    motivo = request.form.get('motivo', '')
+    observaciones = request.form.get('observaciones', '')
+    
+    # Combinar motivo con observaciones
+    motivo_completo = f"{motivo}"
+    if observaciones:
+        motivo_completo += f" - {observaciones}"
+    
+    # Validar
+    valido, error = validar_cambio_habitacion(num_habitacion, habitacion_destino)
+    if not valido:
+        flash(f'❌ {error}', 'danger')
+        return redirect(f'/cambiar-habitacion/{num_habitacion}')
+    
+    # Realizar cambio
+    exito, mensaje = cambiar_habitacion(num_habitacion, habitacion_destino, motivo_completo)
+    
+    if exito:
+        flash(f'✅ {mensaje}', 'success')
+        return redirect(f'/habitacion/{habitacion_destino}')
+    else:
+        flash(f'❌ {mensaje}', 'danger')
+        return redirect(f'/cambiar-habitacion/{num_habitacion}')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

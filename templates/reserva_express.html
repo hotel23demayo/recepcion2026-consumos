@@ -86,10 +86,10 @@
                 <strong>ℹ️ Características de la Reserva Express:</strong>
                 <ul class="mb-0 mt-2">
                     <li>Check-in: <strong>HOY</strong></li>
-                    <li>Check-out: <strong>MAÑANA</strong></li>
-                    <li>Estadía: <strong>1 noche</strong></li>
+                    <li>Check-out: <strong>Según noches seleccionadas</strong></li>
+                    <li>Estadía: <strong>1 o más noches</strong> (límite: reservas futuras)</li>
                     <li>Se puede cargar consumos inmediatamente</li>
-                    <li>Se procesa checkout al día siguiente</li>
+                    <li>Se procesa checkout en la fecha programada</li>
                 </ul>
             </div>
             
@@ -110,7 +110,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Habitación *</label>
-                        <select name="habitacion" class="form-select form-select-lg" required {% if not habitaciones %}disabled{% endif %}>
+                        <select name="habitacion" id="habitacionSelect" class="form-select form-select-lg" required {% if not habitaciones %}disabled{% endif %}>
                             <option value="">Seleccionar...</option>
                             {% for hab in habitaciones %}
                             <option value="{{ hab }}" {% if hab == habitacion_preseleccionada %}selected{% endif %}>Habitación {{ hab }}</option>
@@ -122,6 +122,21 @@
                         <label class="form-label fw-bold">Cantidad de Personas *</label>
                         <input type="number" name="pax" class="form-control form-control-lg" 
                                min="1" max="4" value="1" required>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Cantidad de Noches *</label>
+                        <input type="number" name="noches" id="nochesInput" class="form-control form-control-lg" 
+                               min="1" max="30" value="1" required>
+                        <small id="limiteNoches" class="form-text text-muted"></small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Fecha de Salida</label>
+                        <input type="text" id="fechaSalida" class="form-control form-control-lg" 
+                               readonly style="background-color: #e9ecef;">
+                        <small class="form-text text-muted">Calculada automáticamente</small>
                     </div>
                 </div>
                 
@@ -157,6 +172,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Validación de formularios Bootstrap
         (function () {
             'use strict'
             var forms = document.querySelectorAll('.needs-validation')
@@ -170,6 +186,48 @@
                 }, false)
             })
         })()
+        
+        // Calcular fecha de salida automáticamente
+        const nochesInput = document.getElementById('nochesInput');
+        const fechaSalidaInput = document.getElementById('fechaSalida');
+        const limiteNoches = document.getElementById('limiteNoches');
+        const habitacionSelect = document.getElementById('habitacionSelect');
+        
+        // Datos de límites por habitación (pasados desde el servidor)
+        const limitesHabitaciones = {{ limites_habitaciones|tojson if limites_habitaciones else '{}' }};
+        
+        function actualizarFechaSalida() {
+            const noches = parseInt(nochesInput.value) || 1;
+            const hoy = new Date();
+            const fechaSalida = new Date(hoy);
+            fechaSalida.setDate(fechaSalida.getDate() + noches);
+            
+            const opciones = { year: 'numeric', month: '2-digit', day: '2-digit' };
+            fechaSalidaInput.value = fechaSalida.toLocaleDateString('es-AR', opciones);
+        }
+        
+        function actualizarLimite() {
+            const habitacion = habitacionSelect.value;
+            if (habitacion && limitesHabitaciones[habitacion]) {
+                const limite = limitesHabitaciones[habitacion];
+                limiteNoches.textContent = `⚠️ Máximo ${limite} noche(s) por reserva futura`;
+                limiteNoches.style.color = '#ff9800';
+                nochesInput.max = limite;
+                if (parseInt(nochesInput.value) > limite) {
+                    nochesInput.value = limite;
+                }
+            } else {
+                limiteNoches.textContent = '';
+                nochesInput.max = 30;
+            }
+            actualizarFechaSalida();
+        }
+        
+        nochesInput.addEventListener('input', actualizarFechaSalida);
+        habitacionSelect.addEventListener('change', actualizarLimite);
+        
+        // Inicializar al cargar
+        actualizarLimite();
     </script>
 </body>
 </html>

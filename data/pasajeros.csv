@@ -7,18 +7,16 @@ Nro. habitación,Fecha de ingreso,Fecha de egreso,Plazas ocupadas,Tipo documento
 115,08/01/2026,15/01/2026,2,DNI,1234567,Flores Carmen,37,V010,ALL INCLUSIVE,Activo,All Inclusive,Principal
 117,07/01/2026,12/01/2026,4,DNI,11234568,Díaz Marcela,44,V011,ALL INCLUSIVE,Activo,All Inclusive,Principal
 119,09/01/2026,13/01/2026,2,DNI,22345679,Vega Sergio,39,V012,MEDIA PENSION,Activo,Map Premium,Principal
-121,08/01/2026,14/01/2026,2,DNI,33456780,Morales Silvia,31,V013,ALL INCLUSIVE,Activo,All Inclusive,Principal
-101,11/01/2026,12/01/2026,1,DNI,0,Pedro Carmona,0,WALK-101-11012026,DESAYUNO,Activo,Walk-in Express,Principal
-104,12/01/2026,15/01/2026,2,DNI,44556677,Benítez Alberto,45,V014,ALL INCLUSIVE,Activo,All Inclusive,Principal
+352,08/01/2026,14/01/2026,2,DNI,33456780,Morales Silvia,31,V013,ALL INCLUSIVE,Activo,All Inclusive,Principal
+353,12/01/2026,15/01/2026,2,DNI,44556677,Benítez Alberto,45,V014,ALL INCLUSIVE,Activo,All Inclusive,Principal
 107,12/01/2026,14/01/2026,3,DNI,55667788,Castro Mónica,38,V015,MEDIA PENSION,Activo,Map Premium,Principal
 109,13/01/2026,16/01/2026,2,DNI,66778899,Núñez Ricardo,41,V016,DESAYUNO,Activo,Solo Desayuno,Principal
-112,12/01/2026,17/01/2026,4,DNI,77889900,Peralta Claudia,33,V017,ALL INCLUSIVE,Activo,All Inclusive,Principal
 114,13/01/2026,15/01/2026,2,DNI,88990011,Quiroga Fernando,50,V018,MEDIA PENSION,Activo,Map Premium,Principal
 116,14/01/2026,18/01/2026,3,DNI,99001122,Rojas Valeria,29,V019,ALL INCLUSIVE,Activo,All Inclusive,Principal
 118,12/01/2026,14/01/2026,2,DNI,10112233,Silva Martín,36,V020,DESAYUNO,Activo,Solo Desayuno,Principal
 120,13/01/2026,16/01/2026,2,DNI,21223344,Torres Gabriela,42,V021,MEDIA PENSION,Activo,Map Premium,Principal
 222,12/01/2026,16/01/2026,2,DNI,32334455,Vidal Sebastián,47,V022,ALL INCLUSIVE,Activo,All Inclusive,Principal
-223,13/01/2026,17/01/2026,4,DNI,43445566,Ortiz Patricia,39,V023,ALL INCLUSIVE,Activo,All Inclusive,Principal
 224,14/01/2026,19/01/2026,2,DNI,54556677,Luna Federico,44,V024,MEDIA PENSION,Activo,Map Premium,Principal
 343,11/01/2026,12/01/2026,1,DNI,0,Huésped sin reserva,0,WALK-343-11012026,DESAYUNO,Activo,Walk-in Express,Principal
-104,11/01/2026,12/01/2026,1,DNI,00000000,Huésped sin reserva,0,WALK-104-11012026,DESAYUNO,Activo,Walk-in Express,Principal
+353,11/01/2026,12/01/2026,1,DNI,0,Huésped sin reserva,0,WALK-104-11012026,DESAYUNO,Activo,Walk-in Express,Principal
+101,17/01/2026,20/01/2026,1,DNI,00000000,Luis Lencina,0,WALK-101-17012026,DESAYUNO,Activo,Walk-in Express,Principal

@@ -174,9 +174,20 @@
                 <span>{{ checkout.pasajero.ingreso }}</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Check-out:</span>
-                <span><strong class="text-danger">{{ checkout.pasajero.egreso }} (HOY)</strong></span>
+                <span class="info-label">Check-out programado:</span>
+                <span>{{ checkout.pasajero.egreso }}</span>
             </div>
+            {% if checkout.es_checkout_hoy %}
+            <div class="info-row">
+                <span class="info-label">Estado:</span>
+                <span><strong class="text-danger">🚪 Check-out del día (según lo programado)</strong></span>
+            </div>
+            {% else %}
+            <div class="info-row">
+                <span class="info-label">Estado:</span>
+                <span><strong class="text-warning">⚠️ Check-out ANTICIPADO (retiro antes de la fecha)</strong></span>
+            </div>
+            {% endif %}
             <div class="info-row">
                 <span class="info-label">Plazas ocupadas:</span>
                 <span>{{ checkout.pasajero.plazas }} persona(s)</span>
@@ -243,14 +254,28 @@
         </div>
 
         <!-- Alerta informativa -->
+        {% if checkout.es_checkout_hoy %}
         <div class="alert-info-checkout">
-            <strong>ℹ️ Información importante:</strong>
+            <strong>ℹ️ Check-out del día:</strong>
             <ul class="mb-0 mt-2">
-                <li>Al confirmar el check-out, se generará un archivo con el resumen final</li>
+                <li>Este es el check-out programado según la fecha de egreso de la reserva</li>
+                <li>Al confirmar, se generará un archivo con el resumen final</li>
                 <li>Los datos del pasajero se archivarán y la habitación quedará disponible</li>
                 <li>Esta acción no se puede deshacer</li>
             </ul>
         </div>
+        {% else %}
+        <div class="alert alert-warning">
+            <strong>⚠️ Check-out ANTICIPADO:</strong>
+            <ul class="mb-0 mt-2">
+                <li><strong>ATENCIÓN:</strong> El huésped se retira ANTES de la fecha programada ({{ checkout.pasajero.egreso }})</li>
+                <li>Esto puede ser por emergencia personal, cambio de planes u otros motivos</li>
+                <li>Al confirmar, se procesará el check-out igualmente y la habitación quedará disponible</li>
+                <li>Los datos del pasajero se archivarán</li>
+                <li>Esta acción no se puede deshacer</li>
+            </ul>
+        </div>
+        {% endif %}
 
         <!-- Botones de acción -->
         <form action="/checkout/{{ checkout.numero }}/confirmar" method="POST">

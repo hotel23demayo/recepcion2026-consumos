@@ -205,6 +205,18 @@
                     ➡️ Procesar Check-out
                 </a>
             </div>
+            {% else %}
+            <!-- Botón de check-out anticipado para retiros antes de la fecha programada -->
+            <div class="alert alert-warning d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <strong>⚠️ Check-out Anticipado</strong>
+                    <p class="mb-0 mt-1">Si el huésped se retira antes de la fecha programada ({{ habitacion.pasajero.egreso }}), procese aquí el check-out anticipado</p>
+                </div>
+                <a href="/checkout/{{ habitacion.numero }}" class="btn btn-warning btn-lg" 
+                   onclick="return confirm('¿Confirma que el huésped se retira ANTICIPADAMENTE antes de la fecha programada ({{ habitacion.pasajero.egreso }})?');">
+                    🚪 Check-out Anticipado
+                </a>
+            </div>
             {% endif %}
 
             <!-- Información del pasajero -->
@@ -226,6 +238,17 @@
                     <span class="info-label">Plazas ocupadas:</span>
                     <span class="info-value">{{ habitacion.pasajero.plazas }}</span>
                 </div>
+            </div>
+            
+            <!-- Botón de cambio de habitación -->
+            <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <strong>🔧 ¿Problemas con la habitación?</strong>
+                    <p class="mb-0 mt-1">Si hay desperfectos (aire acondicionado, plomería, etc.), puede cambiar al huésped a otra habitación disponible</p>
+                </div>
+                <a href="/cambiar-habitacion/{{ habitacion.numero }}" class="btn btn-warning btn-lg">
+                    🔄 Cambiar Habitación
+                </a>
             </div>
 
             <!-- Formulario para agregar consumo -->

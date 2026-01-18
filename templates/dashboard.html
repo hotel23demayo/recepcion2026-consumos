@@ -184,26 +184,6 @@
             border-radius: 5px;
         }
         
-        .btn-cierre-global {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            padding: 15px 30px;
-            font-size: 1.1rem;
-            border-radius: 50px;
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-            border: none;
-            color: white;
-            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
-            z-index: 1000;
-            transition: all 0.3s;
-        }
-        
-        .btn-cierre-global:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 16px rgba(23, 162, 184, 0.6);
-        }
-        
         @media (max-width: 768px) {
             .habitaciones-grid {
                 grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
@@ -232,6 +212,9 @@
                     </a>
                     <a href="/gestionar-pasajeros" class="btn btn-outline-primary btn-lg">
                         📂 Gestionar Pasajeros
+                    </a>
+                    <a href="/ver-consumos" class="btn btn-outline-secondary btn-lg">
+                        📋 Consulta de Consumos
                     </a>
                     {% if estadisticas.checkouts_hoy > 0 %}
                     <a href="/generar-salidas-checkouts" class="btn btn-info btn-lg">
@@ -335,11 +318,6 @@
                 <span>🚪 Check-out HOY</span>
             </div>
         </div>
-
-        <!-- Botón flotante de consulta -->
-        <a href="/ver-consumos" class="btn btn-cierre-global">
-            📋 Consulta de Consumos
-        </a>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

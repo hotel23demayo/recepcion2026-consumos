@@ -11,6 +11,39 @@ Esta implementación convierte al sistema en un PMS más completo, permitiendo m
 
 ---
 
+## ✅ IMPLEMENTACIONES RECIENTES (17/01/2026)
+
+### 1. Reorganización de Botones en Dashboard
+- ✅ Movido botón "Consulta de Consumos" desde posición flotante al header
+- ✅ Ahora está junto con los botones de gestión principales
+- ✅ Mejora la experiencia de usuario y accesibilidad
+
+### 2. Checkout Anticipado
+- ✅ Implementado sistema de checkout para retiros anticipados
+- ✅ Banner amarillo en ficha de habitación para procesar retiros antes de fecha programada
+- ✅ Confirmación adicional para evitar checkouts accidentales
+- ✅ Casos de uso: emergencias personales, problemas urgentes, cambios de plan
+- ✅ Template de checkout diferencia entre checkout normal y anticipado
+- ✅ Documentación actualizada en README.md
+
+---
+
+## 🎯 Contexto del Proyecto
+
+### Flujo Operativo en Temporada Alta
+- Reservas masivas procesadas por 4-5 días continuos
+- Hotel completo al 90% con contingentes
+- Habitaciones libres gestionadas como Walk-ins (1-2 días)
+- Todos ingresan y se van el mismo día (contingentes)
+- Retiros anticipados por urgencias personales o problemas
+
+### Decisión de Arquitectura
+- **Repositorio actual (recepcion2026-consumos)**: Sistema operativo diario (Dashboard + Consumos + Reservas Express)
+- **Repositorio anterior (recepcion2026-reservas)**: Procesamiento batch obsoleto (Excel + openpyxl)
+- **Estrategia**: Mantener separados, priorizar dashboard actual que maneja tanto reservas como consumos
+
+---
+
 ## 🎯 Objetivo
 Crear una reserva mínima con los datos esenciales:
 

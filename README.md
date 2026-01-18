@@ -8,8 +8,10 @@ Sistema web modular para la gestión integral de consumos del hotel con **Dashbo
 
 ✅ **Dashboard visual de 53 habitaciones** con estados en tiempo real  
 ✅ **Detección automática de checkouts** del día actual con indicadores visuales  
+✅ **Checkout anticipado** para retiros antes de la fecha programada  
 ✅ **Reservas futuras visibles** para evitar overbooking  
-✅ **Reserva Express (Walk-ins)** con un click desde habitaciones disponibles  
+✅ **Reserva Express (Walk-ins)** con **múltiples noches** y validación inteligente  
+✅ **Cambio de habitación** por desperfectos con traspaso automático de consumos  
 ✅ **Consumos de último momento** antes del checkout  
 ✅ **Fichas individuales por habitación** con CRUD completo de consumos  
 ✅ **Sistema flexible de consumos** (todos los pasajeros pueden comprar cualquier producto)  
@@ -17,6 +19,7 @@ Sistema web modular para la gestión integral de consumos del hotel con **Dashbo
 ✅ **Carga de archivos CSV** desde sistema externo de reservas  
 ✅ **Backups automáticos** al subir nuevos archivos de pasajeros  
 ✅ **Descargas temporales** sin almacenamiento persistente de exportaciones  
+✅ **Consulta de consumos centralizada** en el header del dashboard  
 
 ---
 
@@ -100,11 +103,15 @@ El dashboard utiliza colores intuitivos para identificar el estado de cada habit
 
 ## 🛎️ Reserva Express (Walk-ins)
 
-Sistema integrado para registrar huéspedes sin reserva previa con un click.
+Sistema integrado para registrar huéspedes sin reserva previa con **estadías flexibles** (1 o más noches).
 
 ### Características
 
-- ✅ **Check-in instantáneo**: 1 noche (hoy → mañana)
+- ✅ **Check-in instantáneo**: Desde hoy hasta N noches
+- ✅ **Noches flexibles**: Seleccionar 1 a 30 noches según disponibilidad
+- ✅ **Validación inteligente**: Detecta conflictos con reservas futuras automáticamente
+- ✅ **Límite dinámico**: Muestra máximo de noches disponibles antes de próxima reserva
+- ✅ **Cálculo automático**: Fecha de salida calculada en tiempo real
 - ✅ **Acceso directo**: Click en habitaciones disponibles desde el dashboard
 - ✅ **Advertencia de reservas**: Permite vender habitaciones con ingreso futuro
 - ✅ **Registro automático**: Genera voucher único y actualiza disponibilidad
@@ -113,15 +120,58 @@ Sistema integrado para registrar huéspedes sin reserva previa con un click.
 ### Flujo de Uso
 
 1. **Habitación Vacía (gris)**: Click → Reserva Express con habitación pre-seleccionada
-2. **Habitación con Reserva Futura (azul)**: Click → Advertencia de ingreso programado + opción de venta
-3. **Completar datos**: Nombre, cantidad de personas (1-4), régimen alimenticio
-4. **Confirmación**: Habitación queda ocupada inmediatamente
+2. **Habitación con Reserva Futura (azul)**: Click → Advertencia de ingreso programado + límite de noches
+3. **Seleccionar datos**:
+   - Habitación (pre-seleccionada o elegir otra)
+   - Cantidad de personas (1-4)
+   - **Cantidad de noches** (sistema muestra límite si hay reservas futuras)
+   - Fecha de salida (calculada automáticamente)
+   - Nombre del huésped
+   - Régimen alimenticio
+4. **Confirmación**: Habitación queda ocupada con las fechas establecidas
 
 ### Inteligencia de Disponibilidad
 
 - Muestra solo habitaciones disponibles AHORA (sin ocupación actual)
-- Identifica reservas futuras y permite venta inteligente
-- Evita conflictos: checkout temprano (10:00) vs ingreso tardío (14:00+)
+- **Detecta reservas futuras** y calcula máximo de noches disponibles
+- **Alerta visual**: Muestra "⚠️ Máximo X noche(s) por reserva futura"
+- Valida conflictos antes de confirmar
+- Ejemplo: Si hay reserva el 20/01, y hoy es 17/01, permite máximo 3 noches
+
+---
+
+## 🔄 Cambio de Habitación
+
+Sistema para trasladar huéspedes entre habitaciones por desperfectos o emergencias.
+
+### Casos de Uso
+
+- ❄️ Aire acondicionado roto/defectuoso
+- 🚿 Problemas de plomería (duchas, inodoros, canillas)
+- ⚡ Problemas eléctricos
+- 🔊 Ruidos o molestias
+- 🧹 Problemas de limpieza
+- 👤 Solicitud del huésped
+- 🔧 Otros desperfectos
+
+### Características
+
+- ✅ **Traspaso completo**: Mueve pasajero + todos sus consumos
+- ✅ **Mantiene datos**: Fechas de ingreso/egreso sin cambios
+- ✅ **Habitación liberada**: La habitación original queda disponible inmediatamente
+- ✅ **Selección visual**: Grid interactivo de habitaciones disponibles
+- ✅ **Registro de motivo**: Documentación del cambio con observaciones
+- ✅ **Seguridad**: Confirmación antes de procesar
+
+### Flujo de Cambio
+
+1. **Desde ficha de habitación**: Click en "🔄 Cambiar Habitación"
+2. **Información actual**: Ver datos del huésped y cantidad de consumos
+3. **Seleccionar nueva habitación**: Grid visual con habitaciones disponibles
+4. **Motivo del cambio**: Seleccionar razón del traslado
+5. **Observaciones**: Agregar detalles adicionales (opcional)
+6. **Confirmar**: El sistema traslada todo automáticamente
+7. **Redirección**: Se abre la ficha de la nueva habitación
 
 ---
 
@@ -130,7 +180,8 @@ Sistema integrado para registrar huéspedes sin reserva previa con un click.
 Cada habitación tiene una vista detallada que muestra:
 
 ### Banner de Checkout (si aplica)
-- Alerta destacada cuando la fecha de egreso es HOY
+- **Alerta roja**: Cuando la fecha de egreso es HOY (checkout programado)
+- **Alerta amarilla**: Opción de check-out anticipado para retiros antes de la fecha programada
 - Permite agregar consumos de último momento antes del checkout
 - Botón "Procesar Check-out" visible cuando el huésped está listo
 
@@ -162,7 +213,21 @@ Cada habitación tiene una vista detallada que muestra:
 
 ### Detección Automática
 
-El sistema detecta automáticamente los checkouts del día comparando la fecha de egreso de cada pasajero con la fecha actual (10/01/2026).
+El sistema detecta automáticamente los checkouts del día comparando la fecha de egreso de cada pasajero con la fecha actual.
+
+### Tipos de Checkout
+
+**1. Checkout Programado (del día)**
+- La fecha de egreso coincide con el día actual
+- Aparece en el dashboard con color rojo pulsante
+- Banner rojo en la ficha de habitación
+- Es el proceso estándar según la reserva
+
+**2. Checkout Anticipado**
+- Para huéspedes que se retiran antes de la fecha programada
+- Casos comunes: emergencias personales, cambios de plan, problemas urgentes
+- Banner amarillo en la ficha de habitación con confirmación adicional
+- Mismo proceso de checkout pero con advertencia clara
 
 ### Proceso de Checkout
 
@@ -170,6 +235,7 @@ El sistema detecta automáticamente los checkouts del día comparando la fecha d
 2. **Click en habitación**: Se abre la ficha con botón "Procesar Checkout"
 3. **Resumen**: Vista previa con:
    - Información del pasajero
+   - Indicador de checkout normal o anticipado
    - Desglose de consumos por categoría
    - Totales individuales
 4. **Confirmación**: Advertencia de que el proceso eliminará el registro
