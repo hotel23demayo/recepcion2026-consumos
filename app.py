@@ -136,7 +136,7 @@ def checkout(num_habitacion):
 
 @app.route('/checkout/<int:num_habitacion>/confirmar', methods=['POST'])
 def confirmar_checkout(num_habitacion):
-    """Procesa el check-out: elimina al pasajero y sus consumos"""
+    """Procesa el check-out individual: elimina al pasajero y sus consumos pagados"""
     habitaciones_ocupadas = obtener_habitaciones_ocupadas()
     
     if num_habitacion not in habitaciones_ocupadas:
@@ -144,7 +144,7 @@ def confirmar_checkout(num_habitacion):
         return redirect('/dashboard')
     
     try:
-        # 1. Eliminar consumos de la habitación
+        # 1. Eliminar consumos de la habitación (se consideran pagados)
         if os.path.exists(DB_CONSUMOS):
             df_consumos = pd.read_csv(DB_CONSUMOS)
             df_consumos = df_consumos[df_consumos['habitacion'] != num_habitacion]
@@ -162,6 +162,91 @@ def confirmar_checkout(num_habitacion):
     except Exception as e:
         flash(f'❌ Error al procesar check-out: {str(e)}', 'danger')
         return redirect(f'/checkout/{num_habitacion}')
+
+
+@app.route('/checkout-masivo')
+def vista_checkout_masivo():
+    """Vista previa del checkout masivo con resumen de habitaciones y consumos"""
+    from core.dashboard import obtener_habitaciones_checkout, es_checkout_hoy
+    from core.consumos import obtener_total_consumos
+    
+    # Obtener todas las habitaciones con checkout hoy
+    habitaciones_ocupadas = obtener_habitaciones_ocupadas()
+    checkouts_hoy = obtener_habitaciones_checkout()
+    
+    if not checkouts_hoy:
+        flash('No hay habitaciones con checkout programado para hoy', 'info')
+        return redirect('/dashboard')
+    
+    # Preparar resumen detallado
+    resumen_checkouts = []
+    total_consumos_general = 0
+    
+    for num_hab in sorted(checkouts_hoy):
+        if num_hab in habitaciones_ocupadas:
+            datos = habitaciones_ocupadas[num_hab]
+            totales_consumos = obtener_total_consumos(num_hab)
+            
+            resumen_checkouts.append({
+                'habitacion': num_hab,
+                'pasajero': datos['pasajero'],
+                'plazas': datos['plazas'],
+                'ingreso': datos['ingreso'],
+                'egreso': datos['egreso'],
+                'voucher': datos.get('voucher', 'N/A'),
+                'total_consumos': totales_consumos['total'],
+                'detalle_consumos': totales_consumos
+            })
+            total_consumos_general += totales_consumos['total']
+    
+    return render_template('checkout_masivo.html', 
+                         checkouts=resumen_checkouts,
+                         total_habitaciones=len(resumen_checkouts),
+                         total_consumos=total_consumos_general)
+
+
+@app.route('/checkout-masivo/confirmar', methods=['POST'])
+def confirmar_checkout_masivo():
+    """Procesa el checkout masivo: elimina todos los pasajeros con egreso hoy y sus consumos pagados"""
+    from core.dashboard import obtener_habitaciones_checkout
+    
+    try:
+        # Obtener habitaciones con checkout hoy
+        checkouts_hoy = obtener_habitaciones_checkout()
+        
+        if not checkouts_hoy:
+            flash('No hay habitaciones para procesar', 'info')
+            return redirect('/dashboard')
+        
+        cantidad_procesada = len(checkouts_hoy)
+        
+        # 1. Eliminar consumos de todas las habitaciones con checkout hoy
+        consumos_eliminados = 0
+        if os.path.exists(DB_CONSUMOS):
+            df_consumos = pd.read_csv(DB_CONSUMOS)
+            consumos_antes = len(df_consumos)
+            df_consumos = df_consumos[~df_consumos['habitacion'].isin(checkouts_hoy)]
+            consumos_eliminados = consumos_antes - len(df_consumos)
+            df_consumos.to_csv(DB_CONSUMOS, index=False)
+        
+        # 2. Eliminar pasajeros con fecha de egreso = hoy
+        if os.path.exists(DB_PASAJEROS):
+            df_pasajeros = pd.read_csv(DB_PASAJEROS)
+            fecha_hoy = datetime.now().strftime('%d/%m/%Y')
+            
+            # Eliminar todas las filas con egreso = hoy
+            df_pasajeros = df_pasajeros[df_pasajeros['Fecha de egreso'] != fecha_hoy]
+            df_pasajeros.to_csv(DB_PASAJEROS, index=False)
+        
+        flash(f'✅ Checkout masivo completado: {cantidad_procesada} habitaciones liberadas. '
+              f'Consumos pagados: {consumos_eliminados} registros eliminados. '
+              f'Las habitaciones están listas para el nuevo rooming.', 'success')
+        
+        return redirect('/dashboard')
+        
+    except Exception as e:
+        flash(f'❌ Error al procesar checkout masivo: {str(e)}', 'danger')
+        return redirect('/checkout-masivo')
 
 @app.route('/cargar', methods=['POST'])
 def cargar_consumo():
@@ -665,24 +750,59 @@ def subir_pasajeros():
             shutil.copy(DB_PASAJEROS, backup_path)
         
         # Validar estructura del CSV
-        df = pd.read_csv(archivo)
+        df_nuevo = pd.read_csv(archivo)
         columnas_requeridas = ['Nro. habitación', 'Fecha de ingreso', 'Fecha de egreso', 
                                'Apellido y nombre', 'Servicios']
         
         for col in columnas_requeridas:
-            if col not in df.columns:
+            if col not in df_nuevo.columns:
                 flash(f'❌ Falta la columna requerida: {col}', 'danger')
                 return redirect('/gestionar-pasajeros')
         
-        # Guardar archivo
-        df.to_csv(DB_PASAJEROS, index=False)
+        # Determinar modo de carga
+        modo = request.form.get('modo_carga', 'agregar')
         
-        # Limpiar consumos
-        if os.path.exists(DB_CONSUMOS):
-            with open(DB_CONSUMOS, 'w') as f:
-                f.write('fecha,habitacion,pasajero,categoria,monto\n')
+        if modo == 'reemplazar':
+            # MODO REEMPLAZAR: Sobreescribir todo (como antes)
+            df_nuevo.to_csv(DB_PASAJEROS, index=False)
+            
+            # Limpiar consumos
+            if os.path.exists(DB_CONSUMOS):
+                with open(DB_CONSUMOS, 'w') as f:
+                    f.write('fecha,habitacion,pasajero,categoria,monto\n')
+            
+            flash(f'✅ Archivo reemplazado completamente ({len(df_nuevo)} pasajeros). Consumos limpiados.', 'success')
+        else:
+            # MODO AGREGAR: Mantener reservas existentes y agregar/actualizar nuevas
+            if os.path.exists(DB_PASAJEROS):
+                df_existente = pd.read_csv(DB_PASAJEROS)
+                
+                # Obtener habitaciones del archivo nuevo
+                habitaciones_nuevas = df_nuevo['Nro. habitación'].unique()
+                
+                # Mantener solo las habitaciones que NO están en el archivo nuevo
+                df_mantener = df_existente[~df_existente['Nro. habitación'].isin(habitaciones_nuevas)]
+                
+                # Combinar: mantener existentes + agregar nuevas
+                df_final = pd.concat([df_mantener, df_nuevo], ignore_index=True)
+                
+                # Eliminar consumos SOLO de las habitaciones que se están reemplazando
+                if os.path.exists(DB_CONSUMOS):
+                    df_consumos = pd.read_csv(DB_CONSUMOS)
+                    df_consumos = df_consumos[~df_consumos['habitacion'].isin(habitaciones_nuevas)]
+                    df_consumos.to_csv(DB_CONSUMOS, index=False)
+                
+                flash(f'✅ Archivo agregado: {len(df_nuevo)} nuevos pasajeros. '
+                      f'Mantenidas: {len(df_mantener)} reservas existentes. '
+                      f'Total: {len(df_final)} pasajeros.', 'success')
+            else:
+                # Si no existe archivo previo, crear nuevo
+                df_final = df_nuevo
+                flash(f'✅ Archivo creado con {len(df_nuevo)} pasajeros.', 'success')
+            
+            # Guardar archivo combinado
+            df_final.to_csv(DB_PASAJEROS, index=False)
         
-        flash(f'✅ Archivo cargado exitosamente ({len(df)} pasajeros). Los consumos han sido limpiados.', 'success')
         return redirect('/dashboard')
         
     except Exception as e:

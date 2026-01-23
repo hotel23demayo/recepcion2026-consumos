@@ -86,8 +86,26 @@
                 <div class="card p-4 mt-4">
                     <h5>📤 Cargar Archivo de Pasajeros</h5>
                     <p class="text-muted">Carga un archivo CSV con las reservas desde tu sistema externo</p>
-                    <p class="small text-info">💡 El archivo puede tener cualquier nombre. Solo debe contener las columnas estándar de pasajeros.</p>
                     <form method="POST" action="/subir-pasajeros" enctype="multipart/form-data">
+                        <!-- Selector de Modo de Carga -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Modo de Carga:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modo_carga" value="agregar" id="modo_agregar" checked>
+                                <label class="form-check-label" for="modo_agregar">
+                                    <strong>➕ Agregar/Actualizar</strong> - Mantiene reservas existentes y agrega las nuevas
+                                    <br><small class="text-muted">Ideal después de checkout masivo para cargar nuevo contingente</small>
+                                </label>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="radio" name="modo_carga" value="reemplazar" id="modo_reemplazar">
+                                <label class="form-check-label" for="modo_reemplazar">
+                                    <strong>🔄 Reemplazar Todo</strong> - Borra todas las reservas y carga desde cero
+                                    <br><small class="text-muted">⚠️ Elimina TODAS las reservas actuales y consumos</small>
+                                </label>
+                            </div>
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-9">
                                 <input type="file" name="archivo" class="form-control" accept=".csv" required>
@@ -95,7 +113,7 @@
                             </div>
                             <div class="col-md-3">
                                 <button type="submit" class="btn btn-success w-100">
-                                    ⬆️ Subir Archivo
+                                    ⬆️ Cargar Archivo
                                 </button>
                             </div>
                         </div>

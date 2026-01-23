@@ -14,43 +14,114 @@ PISOS = {
     3: list(range(343, 354)),  # 343-353 (11 habitaciones)
 }
 
+def obtener_titular_por_edad(pasajeros_lista):
+    """
+    Selecciona el titular de un grupo de pasajeros según la edad.
+    Retorna el pasajero de mayor edad.
+    
+    Args:
+        pasajeros_lista: lista de diccionarios con datos de pasajeros
+    
+    Returns:
+        Diccionario con datos del titular (mayor edad)
+    """
+    if not pasajeros_lista:
+        return None
+    
+    # Ordenar por edad de forma descendente
+    try:
+        titular = max(pasajeros_lista, key=lambda p: int(p.get('Edad', 0)))
+        return titular
+    except:
+        # Si falla, retornar el primero
+        return pasajeros_lista[0]
+
+
 def obtener_habitaciones_ocupadas(archivo_pasajeros='data/pasajeros.csv'):
     """
     Obtiene la lista de habitaciones ocupadas ACTUALMENTE desde el CSV de pasajeros.
     Solo retorna habitaciones donde la fecha de ingreso ya pasó o es hoy.
-    Retorna un diccionario con número de habitación como key y datos del pasajero.
+    
+    Para cada habitación, selecciona como titular al pasajero de mayor edad.
+    Si hay múltiples habitaciones con el mismo voucher (familia), selecciona
+    como titular al adulto mayor del grupo familiar completo.
+    
+    Retorna un diccionario con número de habitación como key y datos del titular.
     """
     if not os.path.exists(archivo_pasajeros):
         return {}
     
     df = pd.read_csv(archivo_pasajeros)
-    habitaciones_ocupadas = {}
     fecha_hoy = datetime.now().strftime('%d/%m/%Y')
     
+    # Filtrar pasajeros que ya ingresaron
+    pasajeros_activos = []
     for _, row in df.iterrows():
         fecha_ingreso = row['Fecha de ingreso']
         
-        # Solo incluir si ya ingresó (fecha ingreso <= hoy)
         try:
             ingreso_dt = datetime.strptime(fecha_ingreso, '%d/%m/%Y')
             hoy_dt = datetime.strptime(fecha_hoy, '%d/%m/%Y')
             
             if ingreso_dt <= hoy_dt:
-                habitaciones_ocupadas[int(row['Nro. habitación'])] = {
-                    'pasajero': row['Apellido y nombre'],
-                    'plazas': int(row['Plazas ocupadas']),
-                    'ingreso': row['Fecha de ingreso'],
-                    'egreso': row['Fecha de egreso'],
-                    'servicios': row['Servicios']
-                }
+                pasajeros_activos.append(row.to_dict())
         except:
             # Si hay error en la fecha, incluir por defecto
-            habitaciones_ocupadas[int(row['Nro. habitación'])] = {
-                'pasajero': row['Apellido y nombre'],
-                'plazas': int(row['Plazas ocupadas']),
-                'ingreso': row['Fecha de ingreso'],
-                'egreso': row['Fecha de egreso'],
-                'servicios': row['Servicios']
+            pasajeros_activos.append(row.to_dict())
+    
+    # Agrupar por voucher para identificar grupos familiares
+    vouchers = {}
+    for pasajero in pasajeros_activos:
+        voucher = str(pasajero.get('Voucher', '')).strip()
+        if voucher:
+            if voucher not in vouchers:
+                vouchers[voucher] = []
+            vouchers[voucher].append(pasajero)
+    
+    # Para cada grupo de voucher, seleccionar el titular (mayor edad)
+    titulares_por_voucher = {}
+    for voucher, grupo in vouchers.items():
+        titular = obtener_titular_por_edad(grupo)
+        if titular:
+            titulares_por_voucher[voucher] = titular
+    
+    # Ahora agrupar por habitación
+    # Si hay varias personas en una habitación, usar el mayor de esa habitación
+    # PERO si comparten voucher con otras habitaciones, usar el titular del voucher completo
+    habitaciones_ocupadas = {}
+    habitaciones_con_pasajeros = {}
+    
+    # Primero agrupar todos los pasajeros por habitación
+    for pasajero in pasajeros_activos:
+        num_hab = int(pasajero['Nro. habitación'])
+        if num_hab not in habitaciones_con_pasajeros:
+            habitaciones_con_pasajeros[num_hab] = []
+        habitaciones_con_pasajeros[num_hab].append(pasajero)
+    
+    # Para cada habitación, determinar quién es el titular
+    for num_hab, pasajeros_hab in habitaciones_con_pasajeros.items():
+        # Obtener voucher de esta habitación
+        voucher = str(pasajeros_hab[0].get('Voucher', '')).strip()
+        
+        # Si el voucher tiene múltiples habitaciones, usar el titular del voucher
+        habitaciones_del_voucher = [p['Nro. habitación'] for p in vouchers.get(voucher, [])]
+        
+        if voucher and len(set(habitaciones_del_voucher)) > 1:
+            # Familia con múltiples habitaciones: usar titular del voucher completo
+            titular = titulares_por_voucher.get(voucher)
+        else:
+            # Habitación individual o sin voucher: usar el mayor de esta habitación
+            titular = obtener_titular_por_edad(pasajeros_hab)
+        
+        if titular:
+            habitaciones_ocupadas[num_hab] = {
+                'pasajero': titular['Apellido y nombre'],
+                'plazas': int(titular['Plazas ocupadas']),
+                'ingreso': titular['Fecha de ingreso'],
+                'egreso': titular['Fecha de egreso'],
+                'servicios': titular['Servicios'],
+                'edad': int(titular.get('Edad', 0)),
+                'voucher': voucher
             }
     
     return habitaciones_ocupadas
@@ -189,18 +260,25 @@ def obtener_datos_dashboard():
                 habitaciones_reservadas
             )
     
-    # Calcular estadísticas
+    # Calcular estadísticas correctamente
+    # IMPORTANTE: Una habitación puede tener reserva futura Y estar ocupada hoy
     total_habitaciones = sum(len(habs) for habs in PISOS.values())
     total_ocupadas = len(habitaciones_ocupadas)
-    total_reservadas = len(habitaciones_reservadas)
     total_con_consumos = len([h for h, e in estados.items() if e == 'con_consumos'])
     total_checkouts = len(checkouts_hoy)
+    
+    # Contar reservadas que NO están ocupadas actualmente
+    reservadas_no_ocupadas = len([h for h in habitaciones_reservadas if h not in habitaciones_ocupadas])
+    
+    # Habitaciones realmente disponibles = total - ocupadas - reservadas_futuras_sin_ocupacion
+    habitaciones_usadas = len(set(list(habitaciones_ocupadas.keys()) + list(habitaciones_reservadas.keys())))
+    total_disponibles = total_habitaciones - habitaciones_usadas
     
     estadisticas = {
         'total': total_habitaciones,
         'ocupadas': total_ocupadas,
-        'vacias': total_habitaciones - total_ocupadas - total_reservadas,
-        'reservadas': total_reservadas,
+        'vacias': total_disponibles,
+        'reservadas': reservadas_no_ocupadas,  # Solo las que no están ocupadas ahora
         'con_consumos': total_con_consumos,
         'sin_consumos': total_ocupadas - total_con_consumos,
         'checkouts_hoy': total_checkouts

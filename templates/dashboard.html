@@ -217,8 +217,8 @@
                         📋 Consulta de Consumos
                     </a>
                     {% if estadisticas.checkouts_hoy > 0 %}
-                    <a href="/generar-salidas-checkouts" class="btn btn-info btn-lg">
-                        📊 Descargar Salidas Hoy ({{ estadisticas.checkouts_hoy }} hab.)
+                    <a href="/checkout-masivo" class="btn btn-danger btn-lg" style="animation: pulse-checkout 2s infinite;">
+                        🚪 Checkout Masivo Contingente ({{ estadisticas.checkouts_hoy }} hab.)
                     </a>
                     {% endif %}
                 </div>

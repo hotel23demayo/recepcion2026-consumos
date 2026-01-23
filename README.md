@@ -8,15 +8,17 @@ Sistema web modular para la gestión integral de consumos del hotel con **Dashbo
 
 ✅ **Dashboard visual de 53 habitaciones** con estados en tiempo real  
 ✅ **Detección automática de checkouts** del día actual con indicadores visuales  
+✅ **Checkout masivo de contingentes** con preview y confirmación  
 ✅ **Checkout anticipado** para retiros antes de la fecha programada  
 ✅ **Reservas futuras visibles** para evitar overbooking  
 ✅ **Reserva Express (Walk-ins)** con **múltiples noches** y validación inteligente  
 ✅ **Cambio de habitación** por desperfectos con traspaso automático de consumos  
 ✅ **Consumos de último momento** antes del checkout  
+✅ **Selección inteligente de titulares** (mayor de edad del grupo familiar)  
 ✅ **Fichas individuales por habitación** con CRUD completo de consumos  
 ✅ **Sistema flexible de consumos** (todos los pasajeros pueden comprar cualquier producto)  
 ✅ **Generación de Excel consolidado** con formato salidas.xlsx  
-✅ **Carga de archivos CSV** desde sistema externo de reservas  
+✅ **Carga de archivos CSV** con modo dual (agregar/reemplazar)  
 ✅ **Backups automáticos** al subir nuevos archivos de pasajeros  
 ✅ **Descargas temporales** sin almacenamiento persistente de exportaciones  
 ✅ **Consulta de consumos centralizada** en el header del dashboard  
@@ -187,9 +189,15 @@ Cada habitación tiene una vista detallada que muestra:
 
 ### Información del Pasajero
 - Número de habitación
-- Apellido y nombre completo
+- Apellido y nombre completo (titular por edad)
 - Fechas de ingreso y egreso
 - Régimen alimenticio (Desayuno, Media Pensión, All Inclusive)
+
+**Sistema de Titulares Inteligente:**
+- El sistema selecciona automáticamente al pasajero de **mayor edad** como titular
+- Para familias con múltiples habitaciones (mismo voucher), el titular es el mismo en todas las habitaciones
+- Los menores de edad nunca aparecen como titulares
+- Los consumos y checkouts se asocian al adulto responsable del grupo
 
 ### Gestión de Consumos
 - **Ver consumos**: Lista completa con fecha, categoría, detalle y monto
@@ -223,7 +231,15 @@ El sistema detecta automáticamente los checkouts del día comparando la fecha d
 - Banner rojo en la ficha de habitación
 - Es el proceso estándar según la reserva
 
-**2. Checkout Anticipado**
+**2. Checkout Masivo (Contingentes)**
+- Para grupos grandes con misma fecha de salida (40-45 habitaciones)
+- Acceso desde el dashboard con botón "Checkout Masivo"
+- Preview con lista completa de habitaciones y consumos
+- Confirmación única para procesar todos los checkouts simultáneamente
+- Elimina todos los registros y consumos del día en una operación
+- Ideal para temporada alta con contingentes
+
+**3. Checkout Anticipado**
 - Para huéspedes que se retiran antes de la fecha programada
 - Casos comunes: emergencias personales, cambios de plan, problemas urgentes
 - Banner amarillo en la ficha de habitación con confirmación adicional
@@ -263,11 +279,26 @@ La página **"Gestionar Pasajeros"** muestra estadísticas en tiempo real:
 
 ### Cargar Nuevo Archivo
 
+**Modo Dual de Carga:**
+
+**Opción A: Agregar/Actualizar** (Recomendado para walk-ins)
+- Mantiene las reservas existentes en pisos 2 y 3
+- Agrega nuevas reservas del CSV (típicamente piso 1)
+- Actualiza habitaciones que coinciden en número
+- Ideal para cargar pasajeros individuales sin borrar contingentes
+
+**Opción B: Reemplazar Todo** (Para contingentes completos)
+- Borra todos los datos actuales
+- Carga solo lo que viene en el CSV
+- Crear backup automático antes de reemplazar
+- Ideal para inicio de temporada o cambio completo de grupo
+
 **Proceso:**
-1. Seleccionar archivo CSV desde sistema externo de reservas
-2. El sistema crea backup automático del archivo anterior (con timestamp)
-3. Se carga el nuevo archivo
-4. Se actualiza el dashboard automáticamente
+1. Seleccionar modo de carga (Agregar/Reemplazar)
+2. Elegir archivo CSV desde sistema externo de reservas
+3. El sistema crea backup automático del archivo anterior (con timestamp)
+4. Se procesa según el modo seleccionado
+5. Se actualiza el dashboard automáticamente
 
 **Requisitos del CSV:**
 - Formato: Separado por comas (`;` o `,`)
@@ -406,6 +437,14 @@ pip install -r requirements.txt
 ---
 
 ## 🆕 Changelog
+
+### v6.0 (23/01/2026) - Checkout Masivo y Selección Inteligente
+- ➕ **Checkout masivo de contingentes** con preview y confirmación única
+- ➕ **Sistema de titular por edad** (voucher-wide, menores nunca titulares)
+- ➕ **Carga dual de CSV** (agregar/reemplazar) para mix walk-ins + contingentes
+- ➕ **Fix estadísticas dashboard** (evita conteo doble de habitaciones con doble reserva)
+- 🔧 **Optimizado**: Gestión de familias multi-habitación con titular único
+- 📝 **Documentado**: Ver [CAMBIOS_TITULAR_POR_EDAD.md](CAMBIOS_TITULAR_POR_EDAD.md)
 
 ### v5.0 (10/01/2026) - Sistema Modular Completo
 - ➕ **Dashboard de 53 habitaciones** con estados visuales en tiempo real
