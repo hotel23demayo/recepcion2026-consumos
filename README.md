@@ -9,8 +9,10 @@ Sistema web modular para la gestión integral de consumos del hotel con **Dashbo
 ✅ **Dashboard visual de 53 habitaciones** con estados en tiempo real  
 ✅ **Detección automática de checkouts** del día actual con indicadores visuales  
 ✅ **Checkout masivo de contingentes** con preview y confirmación  
+✅ **Checkout inteligente** (texto adaptado según cantidad: 1 hab vs múltiples)  
 ✅ **Checkout anticipado** para retiros antes de la fecha programada  
 ✅ **Reservas futuras visibles** para evitar overbooking  
+✅ **Gestión de reservas futuras** con herramienta de carga/eliminación por fecha  
 ✅ **Reserva Express (Walk-ins)** con **múltiples noches** y validación inteligente  
 ✅ **Cambio de habitación** por desperfectos con traspaso automático de consumos  
 ✅ **Consumos de último momento** antes del checkout  
@@ -437,6 +439,14 @@ pip install -r requirements.txt
 ---
 
 ## 🆕 Changelog
+
+### v6.1 (25/01/2026) - Gestión de Reservas Futuras y UX Mejorado
+- ➕ **Herramienta de gestión de reservas futuras** (`gestionar_reservas_futuras.py`)
+- ➕ **Textos adaptables en checkout** (singular para 1 hab, masivo para múltiples)
+- ➕ **Flujo documentado de reservas** con mejores prácticas hoteleras
+- 🔧 **Optimizado**: Eliminación/carga de reservas por fecha con backups automáticos
+- 📝 **Documentado**: Ver [FLUJO_RESERVAS_FUTURAS.md](FLUJO_RESERVAS_FUTURAS.md)
+- 🎨 **Mejorado**: UX del botón de checkout según cantidad de habitaciones
 
 ### v6.0 (23/01/2026) - Checkout Masivo y Selección Inteligente
 - ➕ **Checkout masivo de contingentes** con preview y confirmación única

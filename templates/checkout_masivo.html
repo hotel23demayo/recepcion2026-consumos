@@ -154,15 +154,20 @@
     <div class="checkout-container">
         <!-- Header -->
         <div class="header-checkout">
+            {% if total_habitaciones == 1 %}
+            <h1>🚪 Checkout de Habitación</h1>
+            <p class="lead">Resumen de la habitación con salida programada para hoy</p>
+            {% else %}
             <h1>🚪 Checkout Masivo - Contingente</h1>
             <p class="lead">Resumen de habitaciones con salida programada para hoy</p>
+            {% endif %}
         </div>
 
         <!-- Resumen General -->
         <div class="resumen-general">
             <div class="stat-box danger">
                 <div class="stat-number">{{ total_habitaciones }}</div>
-                <div class="stat-label">Habitaciones para Checkout</div>
+                <div class="stat-label">{% if total_habitaciones == 1 %}Habitación para Checkout{% else %}Habitaciones para Checkout{% endif %}</div>
             </div>
             
             <div class="stat-box {% if total_consumos > 0 %}success{% else %}secondary{% endif %}">
@@ -228,9 +233,13 @@
             </a>
             
             <form method="POST" action="/checkout-masivo/confirmar" 
-                  onsubmit="return confirm('⚠️ ¿Confirmar checkout masivo de {{ total_habitaciones }} habitaciones?\n\nEsta acción NO se puede deshacer.');">
+                  onsubmit="return confirm('⚠️ ¿Confirmar checkout de {% if total_habitaciones == 1 %}la habitación{% else %}{{ total_habitaciones }} habitaciones{% endif %}?\n\nEsta acción NO se puede deshacer.');">
                 <button type="submit" class="btn btn-danger btn-masivo">
+                    {% if total_habitaciones == 1 %}
+                    ✅ Confirmar Checkout (1 hab.)
+                    {% else %}
                     ✅ Confirmar Checkout Masivo ({{ total_habitaciones }} hab.)
+                    {% endif %}
                 </button>
             </form>
         </div>

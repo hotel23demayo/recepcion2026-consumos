@@ -218,7 +218,11 @@
                     </a>
                     {% if estadisticas.checkouts_hoy > 0 %}
                     <a href="/checkout-masivo" class="btn btn-danger btn-lg" style="animation: pulse-checkout 2s infinite;">
+                        {% if estadisticas.checkouts_hoy == 1 %}
+                        🚪 Realizar Checkout (1 hab.)
+                        {% else %}
                         🚪 Checkout Masivo Contingente ({{ estadisticas.checkouts_hoy }} hab.)
+                        {% endif %}
                     </a>
                     {% endif %}
                 </div>
